@@ -9,6 +9,7 @@ import (
 	"eventapp/managers"
 	"eventapp/routes"
 	"eventapp/service"
+	"eventapp/models"
 
 	_ "github.com/lib/pq"
 	"github.com/go-playground/validator/v10"
