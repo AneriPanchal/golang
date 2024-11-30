@@ -1,13 +1,23 @@
- package response
+package response
 
+import (
+    "eventapp/models"
+)
+
+// EventResponse is the response structure for an Event
 type EventResponse struct {
-	ID          string  `json:"id" bson:"_id"`          // MongoDB ObjectID or PostgreSQL UUID
-	Title       string  `json:"title"`                  // Event title
-	Description string  `json:"description"`            // Event description
-	Price       float64 `json:"price"`                  // Event price
-	Location    string  `json:"location"`               // Event location
+	ID          string `json:"id" gorm:"column:id;type:uuid;default:gen_random_uuid()"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Date        string `json:"date"` // Use string to format time for better JSON serialization
 }
 
-type IdResponse struct {
-	ID string `json:"id"` // Unique identifier response (e.g., MongoDB ObjectID)
+// FromModel converts an Event model to an EventResponse
+func FromModel(event models.Event) EventResponse {
+	return EventResponse{
+		ID:          event.ID,
+		Title:       event.Title,
+		Description: event.Description,
+		Date:        event.Date.Format("2006-01-02T15:04:05Z"), // ISO 8601 format
+	}
 }

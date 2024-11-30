@@ -3,10 +3,11 @@ module eventapp
 go 1.22.2
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/go-playground/validator/v10 v10.23.0
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.12.0
-	github.com/lib/pq v1.10.9
 	go.mongodb.org/mongo-driver v1.17.1
 	gorm.io/driver/postgres v1.5.10
 	gorm.io/gorm v1.25.12

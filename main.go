@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	"eventapp/config"
 	"eventapp/controllers"
+	"eventapp/db"
 	"eventapp/managers"
 	"eventapp/routes"
 	"eventapp/service"
-	"eventapp/models"
 
-	_ "github.com/lib/pq"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -33,14 +33,27 @@ func main() {
 		log.Println("No .env file found, using default configurations.")
 	}
 
-	// Initialize database connections
-	if err := config.InitializeDatabaseConnections(); err != nil {
-		log.Fatalf("Failed to initialize database connections: %v", err)
+	// Load PostgreSQL configuration
+	postgresCfg, err := config.LoadPostgresConfig()
+	if err != nil {
+		log.Fatalf("Failed to load PostgreSQL configuration: %v", err)
 	}
 
-	// Set up MongoDB and PostgreSQL services
-	service.SetEventCollection(config.MongoClient, "eventapp")
-	service.SetPostgresDB(config.PostgresDB)
+	// Connect to PostgreSQL
+	postgresDB, err := db.ConnectPostgres(postgresCfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	}
+	// Set PostgreSQL database in the service layer
+	service.SetPostgresDB(postgresDB)
+
+	// Connect to MongoDB
+	mongoClient, err := db.ConnectMongoDB()
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	// Set MongoDB collection in the service layer
+	service.SetEventCollection(mongoClient, "eventapp")
 
 	// Initialize Echo
 	e := echo.New()
@@ -48,10 +61,8 @@ func main() {
 	// Set the custom validator
 	e.Validator = &CustomValidator{Validator: validator.New()}
 
-	// Initialize the manager
+	// Initialize the manager and controller
 	eventManager := &managers.EventManager{}
-
-	// Initialize the controller
 	eventController := &controllers.EventController{Manager: eventManager}
 
 	// Set up routes

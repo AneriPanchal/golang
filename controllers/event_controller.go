@@ -1,95 +1,111 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"eventapp/managers"
-	"eventapp/models"
+	"eventapp/request"
+	"eventapp/response"
 
 	"github.com/labstack/echo/v4"
 )
 
-// EventController handles HTTP requests for events
+// EventController handles HTTP requests related to Events
 type EventController struct {
 	Manager *managers.EventManager
 }
 
-// GetEvents fetches all events
+// GetEvents handler to fetch all Events
 func (c *EventController) GetEvents(ctx echo.Context) error {
-	// Parse the flag from query parameters (true for MongoDB, false for PostgreSQL)
-	flag := ctx.QueryParam("useMongo") == "true"
+	flagValue := ctx.QueryParam("useMongo")
+	flag := flagValue == "true"
 
-	// Call the manager to get events
 	events, err := c.Manager.GetEvents(flag)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return ctx.JSON(http.StatusOK, events)
+	eventResponses := make([]response.EventResponse, 0, len(events))
+	for _, event := range events {
+		eventResponses = append(eventResponses, response.FromModel(event))
+	}
+
+	log.Println("Returned all events")
+	return ctx.JSON(http.StatusOK, eventResponses)
 }
 
-// GetEventByID fetches a single event by its ID
+// GetEventByID handler to fetch an Event by ID
 func (c *EventController) GetEventByID(ctx echo.Context) error {
 	id := ctx.Param("id")
-	flag := ctx.QueryParam("useMongo") == "true"
+	flagValue := ctx.QueryParam("useMongo")
+	flag := flagValue == "true"
 
 	event, err := c.Manager.GetEventByID(flag, id)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return ctx.JSON(http.StatusOK, event)
+	log.Printf("Returned event with ID %s", id)
+	return ctx.JSON(http.StatusOK, response.FromModel(event))
 }
 
-// CreateEvent creates a new event
+// CreateEvent handler to create a new Event
 func (c *EventController) CreateEvent(ctx echo.Context) error {
-	var request models.Event
-	if err := ctx.Bind(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	flagValue := ctx.QueryParam("useMongo")
+	flag := flagValue == "true"
+
+	var req request.EventRequest
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	// Use the flag to determine the database
-	flag := ctx.QueryParam("useMongo") == "true"
-
-	// FIX: Pass both the flag and the request to CreateEvent
-	event, err := c.Manager.CreateEvent(flag, request) // Corrected to include the flag
+	event := req.ToModel()
+	createdEvent, err := c.Manager.CreateEvent(flag, event)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return ctx.JSON(http.StatusCreated, event)
+	log.Println("Created new event")
+	return ctx.JSON(http.StatusCreated, response.FromModel(createdEvent))
 }
 
-// UpdateEvent updates an existing event
+// UpdateEvent handler to update an existing Event
 func (c *EventController) UpdateEvent(ctx echo.Context) error {
 	id := ctx.Param("id")
-	var request models.Event
-	if err := ctx.Bind(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	flagValue := ctx.QueryParam("useMongo")
+	flag := flagValue == "true"
+
+	var req request.EventRequest
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	// Use the flag to determine the database
-	flag := ctx.QueryParam("useMongo") == "true"
-
-	// Call the manager to update the event
-	event, err := c.Manager.UpdateEvent(flag, id, request) // Corrected to include the flag
+	event := req.ToModel()
+	updatedEvent, err := c.Manager.UpdateEvent(flag, id, event)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return ctx.JSON(http.StatusOK, event)
+	log.Printf("Updated event with ID %s", id)
+	return ctx.JSON(http.StatusOK, response.FromModel(updatedEvent))
 }
 
-// DeleteEvent deletes an event by its ID
+// DeleteEvent handler to delete an Event
 func (c *EventController) DeleteEvent(ctx echo.Context) error {
 	id := ctx.Param("id")
+	flagValue := ctx.QueryParam("useMongo")
+	flag := flagValue == "true"
 
-	// Use the flag to determine the database
-	flag := ctx.QueryParam("useMongo") == "true"
-
-	// Call the manager to delete the event
 	if err := c.Manager.DeleteEvent(flag, id); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return ctx.JSON(http.StatusNoContent, nil)
+	log.Printf("Deleted event with ID %s", id)
+	return ctx.JSON(http.StatusOK, map[string]string{"message": "Event deleted successfully"})
 }
