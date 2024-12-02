@@ -3,6 +3,7 @@ package managers
 import (
 	//"errors"
 	"eventapp/models"
+	"eventapp/request"
 	"eventapp/service"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,23 +32,26 @@ func (m *EventManager) GetEventByID(flag bool, id string) (models.Event, error) 
 }
 
 // CreateEvent creates a new event in the specified data source.
-func (m *EventManager) CreateEvent(flag bool, event models.Event) (models.Event, error) {
+func (m *EventManager) CreateEvent(flag bool, event request.EventRequest) (models.Event, error) {
+	event1 := event.ToModel()
+
 	if flag {
-		return service.CreateEventInMongoDB(event)
+		return service.CreateEventInMongoDB(event1)
 	}
-	return service.CreateEventInPostgreSQL(event)
+	return service.CreateEventInPostgreSQL(event1)
 }
 
 // UpdateEvent updates an existing event in the specified data source.
-func (m *EventManager) UpdateEvent(flag bool, id string, event models.Event) (models.Event, error) {
+func (m *EventManager) UpdateEvent(flag bool, id string, event request.EventRequest) (models.Event, error) {
+	event1 := event.ToModel()
 	if flag {
 		objectID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			return models.Event{}, err
 		}
-		return service.UpdateEventInMongoDB(objectID, event)
+		return service.UpdateEventInMongoDB(objectID, event1)
 	}
-	return service.UpdateEventInPostgreSQL(id, event)
+	return service.UpdateEventInPostgreSQL(id, event1)
 }
 
 // DeleteEvent deletes an event from the specified data source.

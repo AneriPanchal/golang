@@ -18,6 +18,9 @@ type EventController struct {
 // GetEvents handler to fetch all Events
 func (c *EventController) GetEvents(ctx echo.Context) error {
 	flagValue := ctx.QueryParam("useMongo")
+	if flagValue != "true" && flagValue != "false" {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for useMongo. Expected 'true' or 'false'."})
+	}
 	flag := flagValue == "true"
 
 	events, err := c.Manager.GetEvents(flag)
@@ -38,9 +41,13 @@ func (c *EventController) GetEvents(ctx echo.Context) error {
 func (c *EventController) GetEventByID(ctx echo.Context) error {
 	id := ctx.Param("id")
 	flagValue := ctx.QueryParam("useMongo")
+	if flagValue != "true" && flagValue != "false" {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for useMongo. Expected 'true' or 'false'."})
+	}
 	flag := flagValue == "true"
-
-	event, err := c.Manager.GetEventByID(flag, id)
+	
+	
+	event, err := c.Manager.GetEventByID(flag,id)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -52,6 +59,9 @@ func (c *EventController) GetEventByID(ctx echo.Context) error {
 // CreateEvent handler to create a new Event
 func (c *EventController) CreateEvent(ctx echo.Context) error {
 	flagValue := ctx.QueryParam("useMongo")
+	if flagValue != "true" && flagValue != "false" {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for useMongo. Expected 'true' or 'false'."})
+	}
 	flag := flagValue == "true"
 
 	var req request.EventRequest
@@ -62,8 +72,7 @@ func (c *EventController) CreateEvent(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	event := req.ToModel()
-	createdEvent, err := c.Manager.CreateEvent(flag, event)
+	createdEvent, err := c.Manager.CreateEvent(flag, req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -76,6 +85,9 @@ func (c *EventController) CreateEvent(ctx echo.Context) error {
 func (c *EventController) UpdateEvent(ctx echo.Context) error {
 	id := ctx.Param("id")
 	flagValue := ctx.QueryParam("useMongo")
+	if flagValue != "true" && flagValue != "false" {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for useMongo. Expected 'true' or 'false'."})
+	}
 	flag := flagValue == "true"
 
 	var req request.EventRequest
@@ -86,8 +98,8 @@ func (c *EventController) UpdateEvent(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	event := req.ToModel()
-	updatedEvent, err := c.Manager.UpdateEvent(flag, id, event)
+	
+	updatedEvent, err := c.Manager.UpdateEvent(flag, id, req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -100,12 +112,15 @@ func (c *EventController) UpdateEvent(ctx echo.Context) error {
 func (c *EventController) DeleteEvent(ctx echo.Context) error {
 	id := ctx.Param("id")
 	flagValue := ctx.QueryParam("useMongo")
+	if flagValue != "true" && flagValue != "false" {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for useMongo. Expected 'true' or 'false'."})
+	}
 	flag := flagValue == "true"
 
 	if err := c.Manager.DeleteEvent(flag, id); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-
+	
 	log.Printf("Deleted event with ID %s", id)
 	return ctx.JSON(http.StatusOK, map[string]string{"message": "Event deleted successfully"})
 }
